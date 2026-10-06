@@ -1,0 +1,97 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&family=Great+Vibes&display=swap");
+@import "tailwindcss";
+
+:root {
+  --ink: #1b0d0b;
+  --cream: #f8f0e8;
+  --paper: #fffaf5;
+  --rose: #d98c7c;
+  --rose-dark: #a95f55;
+  --gold: #c79b5c;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "DM Sans", sans-serif;
+}
+
+h1, h2, h3, h4 {
+  font-family: "Cormorant Garamond", serif;
+}
+
+.script {
+  font-family: "Great Vibes", cursive;
+}
+
+.section-kicker {
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  font-size: .68rem;
+  font-weight: 700;
+  color: var(--rose-dark);
+}
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  border-radius: 999px;
+  padding: .85rem 1.25rem;
+  background: #f4b49e;
+  color: #24110e;
+  font-size: .78rem;
+  font-weight: 700;
+  transition: transform .2s ease, background .2s ease;
+}
+
+.btn-primary:hover { transform: translateY(-2px); background: #ffc5b2; }
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  border: 1px solid rgba(255,255,255,.7);
+  border-radius: 999px;
+  padding: .85rem 1.25rem;
+  color: white;
+  font-size: .78rem;
+  font-weight: 700;
+  transition: background .2s ease;
+}
+
+.btn-outline:hover { background: rgba(255,255,255,.1); }
+
+.photo {
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+.hero-photo {
+  background-image:
+    linear-gradient(90deg, rgba(0,0,0,.1), rgba(0,0,0,.15)),
+    url("/images/hero-dancer.jpg");
+}
+
+@media (max-width: 767px) {
+  .hero-photo { min-height: 420px; }
+}
+
+.form-input {
+  width: 100%;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 0.75rem;
+  padding: 0.85rem 1rem;
+  font-size: 0.875rem;
+  outline: none;
+  background: white;
+  transition: border-color 0.2s ease;
+}
+
+.form-input:focus {
+  border-color: #b86c60;
+}
