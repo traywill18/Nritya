@@ -1,89 +1,131 @@
+
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, CalendarDays } from "lucide-react";
+import { supabase } from "../services/supabase.js";
+
+const initialFormData = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  phone: "",
+  eventType: "",
+  eventDate: "",
+  eventTime: "",
+  location: "",
+  guests: "",
+  package: "",
+  message: "",
+};
+
+function getLocalDate() {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 export default function BookPerformance() {
+  const [formData, setFormData] = useState(initialFormData);
   const [submitted, setSubmitted] = useState(false);
-
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    eventType: "",
-    eventDate: "",
-    eventTime: "",
-    location: "",
-    guests: "",
-    package: "",
-    message: "",
-  });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   function handleChange(e) {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    const { name, value } = e.target;
+
+    setFormData((previous) => ({
+      ...previous,
+      [name]: value,
+    }));
+
+    if (error) setError("");
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
+    setError("");
 
-    console.log("Booking request:", formData);
+    if (!formData.package) {
+      setError("Please select a performance package.");
+      return;
+    }
 
-    setSubmitted(true);
+    if (formData.eventDate < getLocalDate()) {
+      setError("Please choose today or a future date for your event.");
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const { error: insertError } = await supabase
+        .from("bookings")
+        .insert({
+          first_name: formData.firstName.trim(),
+          last_name: formData.lastName.trim(),
+          email: formData.email.trim(),
+          phone: formData.phone.trim(),
+          event_type: formData.eventType,
+          event_date: formData.eventDate,
+          event_time: formData.eventTime,
+          location: formData.location.trim(),
+          guests: Number(formData.guests),
+          performance_package: formData.package,
+          message: formData.message.trim() || null,
+          status: "pending",
+        });
+
+      if (insertError) {
+        console.error("Booking submission failed:", insertError);
+        setError(
+          "We couldn't submit your request right now. Please try again."
+        );
+        return;
+      }
+
+      setSubmitted(true);
+    } catch (err) {
+      console.error("Unexpected booking error:", err);
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (submitted) {
     return (
       <div className="min-h-screen bg-[#fffaf5]">
-
         <div className="mx-auto flex min-h-screen max-w-3xl items-center justify-center px-5">
-
           <div className="w-full rounded-3xl bg-white p-8 text-center shadow-xl md:p-12">
-
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#f8ddd5] text-2xl">
               ✓
             </div>
 
-            <h1 className="mt-6 text-4xl">
-              Request Received
-            </h1>
+            <h1 className="mt-6 text-4xl">Request Received</h1>
 
             <p className="mx-auto mt-4 max-w-lg text-sm leading-6 text-black/60">
               Thank you for your interest in Nritya Dance Collective.
-              We received your performance request and will contact you
-              shortly to discuss availability and pricing.
+              Your booking request has been submitted successfully.
+              Our team will review availability and contact you about
+              the next steps. Your performance is not confirmed yet.
             </p>
 
-            <a
-              href="/"
-              className="btn-primary mt-7 inline-flex items-center gap-2"
-            >
+            <a href="/" className="btn-primary mt-7 inline-flex items-center gap-2">
               Return Home
               <ArrowRight size={14} />
             </a>
-
           </div>
-
         </div>
-
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-[#f8f0e8]">
-
-      {/* Header */}
-
-      <div className="bg-[#180907] px-5 py-5 text-white">
-
+      <header className="bg-[#180907] px-5 py-5 text-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
-
-          <a
-            href="/"
-            className="flex items-center gap-2"
-          >
+          <a href="/" className="flex items-center gap-2">
             <div className="grid h-10 w-10 place-items-center rounded-full border border-[#c79b5c] text-[#c79b5c]">
               ✦
             </div>
@@ -92,7 +134,6 @@ export default function BookPerformance() {
               <div className="font-serif text-xl tracking-[.18em]">
                 NRITYA
               </div>
-
               <div className="text-[8px] uppercase tracking-[.28em] text-white/70">
                 Dance Collective
               </div>
@@ -106,306 +147,189 @@ export default function BookPerformance() {
             <ArrowLeft size={14} />
             Back Home
           </a>
-
         </div>
-
-      </div>
-
-      {/* Page Header */}
+      </header>
 
       <section className="px-5 pb-10 pt-16 text-center">
-
-        <p className="section-kicker">
-          Let's Create Something Beautiful
-        </p>
+        <p className="section-kicker">Let's Create Something Beautiful</p>
 
         <h1 className="mt-3 text-5xl md:text-6xl">
           Book a Performance
         </h1>
 
         <p className="mx-auto mt-5 max-w-2xl text-sm leading-6 text-black/60">
-          Tell us about your event and we'll work with you to
-          create a memorable cultural performance for your celebration.
+          Tell us about your event and we'll work with you to create
+          a memorable cultural performance for your celebration.
         </p>
-
       </section>
 
-      {/* Form */}
-
       <section className="px-5 pb-20">
-
         <form
           onSubmit={handleSubmit}
           className="mx-auto max-w-5xl rounded-3xl bg-white p-6 shadow-xl md:p-10"
         >
+          <h2 className="text-3xl">Your Information</h2>
+          <p className="mt-1 text-sm text-black/50">
+            How can we contact you?
+          </p>
 
-          {/* Contact Information */}
-
-          <div>
-
-            <h2 className="text-3xl">
-              Your Information
-            </h2>
-
-            <p className="mt-1 text-sm text-black/50">
-              How can we contact you?
-            </p>
-
-            <div className="mt-6 grid gap-5 md:grid-cols-2">
-
-              <Input
-                label="First Name"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
-                required
-              />
-
-              <Input
-                label="Last Name"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleChange}
-                required
-              />
-
-              <Input
-                label="Email Address"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-
-              <Input
-                label="Phone Number"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                required
-              />
-
-            </div>
-
+          <div className="mt-6 grid gap-5 md:grid-cols-2">
+            <Input label="First Name" name="firstName" value={formData.firstName} onChange={handleChange} required />
+            <Input label="Last Name" name="lastName" value={formData.lastName} onChange={handleChange} required />
+            <Input label="Email Address" name="email" type="email" value={formData.email} onChange={handleChange} required />
+            <Input label="Phone Number" name="phone" type="tel" value={formData.phone} onChange={handleChange} required />
           </div>
 
-          <div className="my-10 border-t border-black/10" />
+          <Divider />
 
-          {/* Event Information */}
+          <h2 className="text-3xl">Event Information</h2>
+          <p className="mt-1 text-sm text-black/50">
+            Tell us about your celebration.
+          </p>
 
-          <div>
+          <div className="mt-6 grid gap-5 md:grid-cols-2">
+            <Field label="Event Type">
+              <select
+                name="eventType"
+                value={formData.eventType}
+                onChange={handleChange}
+                required
+                className="form-input"
+              >
+                <option value="">Select event type</option>
+                <option value="Wedding">Wedding</option>
+                <option value="Cultural Event">Cultural Event</option>
+                <option value="Birthday">Birthday</option>
+                <option value="Private Celebration">Private Celebration</option>
+                <option value="Corporate Event">Corporate Event</option>
+                <option value="Other">Other</option>
+              </select>
+            </Field>
 
-            <h2 className="text-3xl">
-              Event Information
-            </h2>
+            <Field label="Number of Guests">
+              <input
+                name="guests"
+                type="number"
+                min="1"
+                step="1"
+                value={formData.guests}
+                onChange={handleChange}
+                placeholder="Approximate number"
+                required
+                className="form-input"
+              />
+            </Field>
 
-            <p className="mt-1 text-sm text-black/50">
-              Tell us about your celebration.
-            </p>
-
-            <div className="mt-6 grid gap-5 md:grid-cols-2">
-
-              <Field label="Event Type">
-                <select
-                  name="eventType"
-                  value={formData.eventType}
-                  onChange={handleChange}
-                  required
-                  className="form-input"
-                >
-                  <option value="">
-                    Select event type
-                  </option>
-
-                  <option value="Wedding">
-                    Wedding
-                  </option>
-
-                  <option value="Cultural Event">
-                    Cultural Event
-                  </option>
-
-                  <option value="Birthday">
-                    Birthday
-                  </option>
-
-                  <option value="Private Celebration">
-                    Private Celebration
-                  </option>
-
-                  <option value="Corporate Event">
-                    Corporate Event
-                  </option>
-
-                  <option value="Other">
-                    Other
-                  </option>
-
-                </select>
-              </Field>
-
-              <Field label="Number of Guests">
+            <Field label="Event Date">
+              <div className="relative">
+                <CalendarDays
+                  size={17}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40"
+                />
                 <input
-                  name="guests"
-                  type="number"
-                  min="1"
-                  value={formData.guests}
-                  onChange={handleChange}
-                  placeholder="Approximate number"
-                  required
-                  className="form-input"
-                />
-              </Field>
-
-              <Field label="Event Date">
-                <div className="relative">
-
-                  <CalendarDays
-                    size={17}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-black/40"
-                  />
-
-                  <input
-                    name="eventDate"
-                    type="date"
-                    value={formData.eventDate}
-                    onChange={handleChange}
-                    required
-                    className="form-input pl-11"
-                  />
-
-                </div>
-              </Field>
-
-              <Field label="Preferred Time">
-                <input
-                  name="eventTime"
-                  type="time"
-                  value={formData.eventTime}
+                  name="eventDate"
+                  type="date"
+                  min={getLocalDate()}
+                  value={formData.eventDate}
                   onChange={handleChange}
                   required
-                  className="form-input"
+                  className="form-input pl-11"
                 />
-              </Field>
-
-              <div className="md:col-span-2">
-
-                <Input
-                  label="Event Location"
-                  name="location"
-                  value={formData.location}
-                  onChange={handleChange}
-                  placeholder="Venue, city, state"
-                  required
-                />
-
               </div>
+            </Field>
 
+            <Field label="Preferred Time">
+              <input
+                name="eventTime"
+                type="time"
+                value={formData.eventTime}
+                onChange={handleChange}
+                required
+                className="form-input"
+              />
+            </Field>
+
+            <div className="md:col-span-2">
+              <Input
+                label="Event Location"
+                name="location"
+                value={formData.location}
+                onChange={handleChange}
+                placeholder="Venue, city, state"
+                required
+              />
             </div>
-
           </div>
 
-          <div className="my-10 border-t border-black/10" />
+          <Divider />
 
-          {/* Package */}
+          <h2 className="text-3xl">Performance</h2>
+          <p className="mt-1 text-sm text-black/50">
+            Choose the type of performance you're interested in.
+          </p>
 
-          <div>
-
-            <h2 className="text-3xl">
-              Performance
-            </h2>
-
-            <p className="mt-1 text-sm text-black/50">
-              Choose the type of performance you're interested in.
-            </p>
-
-            <div className="mt-6 grid gap-4 md:grid-cols-3">
-
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
+            {[
+              { title: "Solo", description: "One dancer performance" },
+              { title: "Duo", description: "Two dancer performance" },
+              { title: "Group", description: "Full group performance" },
+            ].map((option) => (
               <Package
-                title="Solo"
-                description="One dancer performance"
-                value="Solo"
-                selected={formData.package === "Solo"}
-                onClick={() =>
-                  setFormData({
-                    ...formData,
-                    package: "Solo",
-                  })
-                }
+                key={option.title}
+                title={option.title}
+                description={option.description}
+                selected={formData.package === option.title}
+                onClick={() => {
+                  setFormData((previous) => ({
+                    ...previous,
+                    package: option.title,
+                  }));
+                  setError("");
+                }}
               />
-
-              <Package
-                title="Duo"
-                description="Two dancer performance"
-                value="Duo"
-                selected={formData.package === "Duo"}
-                onClick={() =>
-                  setFormData({
-                    ...formData,
-                    package: "Duo",
-                  })
-                }
-              />
-
-              <Package
-                title="Group"
-                description="Full group performance"
-                value="Group"
-                selected={formData.package === "Group"}
-                onClick={() =>
-                  setFormData({
-                    ...formData,
-                    package: "Group",
-                  })
-                }
-              />
-
-            </div>
-
+            ))}
           </div>
 
-          <div className="my-10 border-t border-black/10" />
-
-          {/* Additional Information */}
+          <Divider />
 
           <Field label="Tell us more about your event">
-
             <textarea
               name="message"
               value={formData.message}
               onChange={handleChange}
-              rows="6"
+              rows={6}
+              maxLength={3000}
               placeholder="Tell us about your event, performance ideas, cultural traditions you'd like included, etc."
-              className="form-input resize-none"
+              className="form-input resize-y"
             />
-
           </Field>
 
-          {/* Submit */}
+          {error && (
+            <p role="alert" className="mt-6 rounded-lg bg-red-50 p-4 text-sm text-red-700">
+              {error}
+            </p>
+          )}
+
+          <p className="mt-6 text-xs leading-5 text-black/50">
+            Submitting this form sends a booking request for review. It does
+            not confirm availability or guarantee a performance.
+          </p>
 
           <div className="mt-8 flex justify-end">
-
             <button
               type="submit"
-              className="btn-primary inline-flex items-center gap-2"
+              disabled={submitting}
+              className="btn-primary inline-flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Submit Booking Request
-              <ArrowRight size={15} />
+              {submitting ? "Submitting..." : "Submit Booking Request"}
+              {!submitting && <ArrowRight size={15} />}
             </button>
-
           </div>
-
         </form>
-
       </section>
-
     </div>
   );
 }
-
-
-/* Input */
 
 function Input({
   label,
@@ -414,7 +338,7 @@ function Input({
   value,
   onChange,
   placeholder,
-  required,
+  required = false,
 }) {
   return (
     <Field label={label}>
@@ -425,14 +349,18 @@ function Input({
         onChange={onChange}
         placeholder={placeholder}
         required={required}
+        maxLength={200}
+        autoComplete={
+          name === "firstName" ? "given-name" :
+          name === "lastName" ? "family-name" :
+          name === "email" ? "email" :
+          name === "phone" ? "tel" : undefined
+        }
         className="form-input"
       />
     </Field>
   );
 }
-
-
-/* Field */
 
 function Field({ label, children }) {
   return (
@@ -440,24 +368,20 @@ function Field({ label, children }) {
       <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-black/60">
         {label}
       </label>
-
       {children}
     </div>
   );
 }
 
+function Divider() {
+  return <div className="my-10 border-t border-black/10" />;
+}
 
-/* Package */
-
-function Package({
-  title,
-  description,
-  selected,
-  onClick,
-}) {
+function Package({ title, description, selected, onClick }) {
   return (
     <button
       type="button"
+      aria-pressed={selected}
       onClick={onClick}
       className={`rounded-2xl border p-5 text-left transition ${
         selected
@@ -466,11 +390,7 @@ function Package({
       }`}
     >
       <div className="flex items-center justify-between">
-
-        <h3 className="font-serif text-2xl">
-          {title}
-        </h3>
-
+        <h3 className="font-serif text-2xl">{title}</h3>
         <div
           className={`h-4 w-4 rounded-full border ${
             selected
@@ -478,13 +398,8 @@ function Package({
               : "border-black/20"
           }`}
         />
-
       </div>
-
-      <p className="mt-2 text-xs text-black/50">
-        {description}
-      </p>
-
+      <p className="mt-2 text-xs text-black/50">{description}</p>
     </button>
   );
 }
